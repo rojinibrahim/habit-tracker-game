@@ -15,8 +15,8 @@ A Python-based habit tracker with a gamified system.
 2. Run:
    python main.py
 
-## Future improvements
-- Level system (XP → levels)
-- GUI version (Tkinter)
-- Custom habits
-- Daily tracking system
+## Future Improvements
+- [x] Data persistence using JSON (Done!)
+- [ ] Level system (XP → levels)
+- [ ] GUI version (Tkinter)
+- [ ] Custom habits
