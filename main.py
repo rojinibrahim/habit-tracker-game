@@ -22,28 +22,27 @@ guild_habits = {
 }
 
 
-def add_user(users: dict, name: str, age: int, gender: str, goal: str):
-    users[name] = {
+def add_user(users: dict, user_key: str, dispaly_name: str, age: int, gender: str):
+    users[user_key] = {
+        "name": dispaly_name,
         "age": age,
-        "goal": goal,
         "gender": gender,
         "xp": 0,
         "habits": []
     }
 
 
-def print_profile(users: dict, name: str):
-    if name not in users:
-        print(f"User {name} not found")
+def print_profile(users: dict, user_key: str):
+    if user_key not in users:
+        print(f"User {user_key} not found")
         return
 
-    profile = users[name]
-    print(f"--- Profile: {name} ---")
+    profile = users[user_key]
+    print(f"--- Profile: {profile['name']} ---")
     print(f"Age: {profile['age']}")
     print(f"Gender: {profile['gender']}")
-    print(f"Main Goal: {profile['goal']}")
     print(f"XP: {profile['xp']}")
-    print(f"Active Habits: {len(profile['habits'])}")
+    print(f"Active Habits: {len(profile['habits'])}\n")
 
 
 def choose_guild():
@@ -95,12 +94,12 @@ def choose_habit_from_guild(guild: str):
             f"Please enter a number between 1 and {len(habits)}, or type 'exit'.")
 
 
-def add_habit(users: dict, name: str, habit_name: str, guild: str):
-    if name not in users:
-        print(f"User {name} not found")
+def add_habit(users: dict, user_key: str, habit_name: str, guild: str):
+    if user_key not in users:
+        print(f"User not found")
         return
 
-    habits = users[name]["habits"]
+    habits = users[user_key]["habits"]
     today = str(date.today())
     for habit in habits:
         if habit["name"].lower() == habit_name.lower():
@@ -111,13 +110,13 @@ def add_habit(users: dict, name: str, habit_name: str, guild: str):
             habit["xp"] += 10
             habit["last_completed"] = today
 
-            users[name]["xp"] += 10
+            users[user_key]["xp"] += 10
 
             level = get_habit_level(habit["guild"], habit["xp"])
 
             print(f"Updated! {habit_name} streak is now {habit['streak']}")
             print(f"{habit_name} gained 10 XP and is now at level: {level}")
-            print(f"You gained 10 XP! Total XP: {users[name]['xp']}")
+            print(f"You gained 10 XP! Total XP: {users[user_key]['xp']}")
             return
 
     new_habit = {
@@ -128,13 +127,13 @@ def add_habit(users: dict, name: str, habit_name: str, guild: str):
     }
 
     habits.append(new_habit)
-    users[name]["xp"] += 10
+    users[user_key]["xp"] += 10
 
     level = get_habit_level(new_habit["guild"], new_habit["xp"])
 
     print(f"New habit added: {habit_name} (streak: 1)")
     print(f"{habit_name} gained 10 XP and starts at level: {level}")
-    print(f"You gained 10 XP! Total XP: {users[name]['xp']}")
+    print(f"You gained 10 XP! Total XP: {users[user_key]['xp']}")
 
 
 def get_habit_level(guild: str, habit_xp: int):
@@ -155,13 +154,13 @@ def get_habit_level(guild: str, habit_xp: int):
     return "Apprentice"
 
 
-def show_all_habits(users: dict, name: str):
-    if name not in users:
-        print(f"User {name} not found")
+def show_all_habits(users: dict, user_key: str):
+    if user_key in users:
+        print(f"User not found")
         return
-
-    habit_list = users[name]["habits"]
-    print(f"Habits for {name}:")
+    profile = users[user_key]
+    habit_list = profile["habits"]
+    print(f"Habits for {profile['name']}:")
 
     for habit in habit_list:
         level = get_habit_level(habit["guild"], habit["xp"])
@@ -189,12 +188,34 @@ def load_data():
 
 def main():
     users = load_data()
-
-    user_name = input("Enter your name: ").lower()
-
-    if user_name.lower() in users:
-        print("Welcome back!")
+    display_name = input("May I know your name? ").strip()
+    user_key = display_name.lower()
+    if user_key in users:
+        print(f"Welcome back, {users[user_key]['name']}!")
+        print("Your return brings hope to Aethelgard in our battle against the Lord of Nightmares.")
     else:
+        print("Welcome to Aethelgard, young wanderer. My name is Honora, and I am the guide for wanderers like yourself.")
+
+        print(
+            f"Hello, {display_name}. As you can see, our world, Aethelgard, lies in ruins.")
+        print("The Lord of Nightmares came with his army and invaded our land.")
+        print("They destroyed our beautiful home and brought darkness upon us.")
+
+        print(
+            f"Now, dear {display_name}, with your help, we can defeat the Lord of Nightmares and bring peace back to our world.")
+
+        approve = input("Will you help us in our mission? (y/n): ").lower()
+
+        if approve == "y":
+            print("We are truly grateful to hear that.")
+            print("All you must do is choose a habit you wish to bring into your life.")
+            print("With each passing day that you remain faithful to it, you strike a blow against the Lord of Nightmares.")
+            print("Do not worry—you are not alone on this journey.")
+            print("The guild you choose will stand beside you and support you.")
+        else:
+            print(
+                "That is disappointing to hear, but we respect your choice. May your path still be peaceful.")
+
         while True:
             try:
                 user_age = int(input("Enter your age: "))
@@ -215,11 +236,10 @@ def main():
                     break
                 else:
                     print("Invalid choice, please try again.")
-        user_goal = input("What is your main goal? ")
 
-        add_user(users, user_name, user_age, user_gender, user_goal)
+        add_user(users, user_key, display_name, user_age, user_gender)
 
-    print_profile(users, user_name)
+    print_profile(users, user_key)
 
     while True:
         print("\nChoose a guild, or type 'exit' to finish.")
@@ -231,14 +251,14 @@ def main():
         if chosen_habit is None:
             continue
 
-        add_habit(users, user_name, chosen_habit, selected_guild)
+        add_habit(users, user_key, chosen_habit, selected_guild)
 
         stop = input("Do you want to add another habit? (yes/no): ").lower()
         if stop == "no":
             break
 
-    show_all_habits(users, user_name)
-    print(f"Final XP: {users[user_name]['xp']}")
+    show_all_habits(users, user_key)
+    print(f"Final XP: {users[user_key]['xp']}")
     save_data(users)
 
 
