@@ -9,6 +9,7 @@ A Python-based habit tracker with a gamified system.
 - Streak tracking
 - XP system
 - Data persistence using JSON
+- Interactive story 
 
 ## How to run
 1. Install Python
@@ -17,6 +18,6 @@ A Python-based habit tracker with a gamified system.
 
 ## Future Improvements
 - [x] Data persistence using JSON (Done!)
-- [ ] Level system (XP → levels)
+- [x] Level system (XP → levels) (Done!)
 - [ ] GUI version (Tkinter)
 - [ ] Custom habits
