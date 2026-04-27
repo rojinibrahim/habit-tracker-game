@@ -1,6 +1,7 @@
 import json
-from datetime import date
-guild_habits = {
+from datetime import date, timedelta
+import sys
+faction_habits = {
     "fitness": [
         "Walk 30 minutes",
         "Go to the gym",
@@ -22,9 +23,9 @@ guild_habits = {
 }
 
 
-def add_user(users: dict, user_key: str, dispaly_name: str, age: int, gender: str):
+def add_user(users: dict, user_key: str, display_name: str, age: int, gender: str):
     users[user_key] = {
-        "name": dispaly_name,
+        "name": display_name,
         "age": age,
         "gender": gender,
         "xp": 0,
@@ -45,15 +46,15 @@ def print_profile(users: dict, user_key: str):
     print(f"Active Habits: {len(profile['habits'])}\n")
 
 
-def choose_guild():
-    print("Choose your guild:")
+def choose_faction():
+    print("Choose your faction:")
     print("1. Fitness")
     print("2. Health")
     print("3. Education")
     print("4. Exit")
 
     while True:
-        choice = input("Enter guild number: ")
+        choice = input("Enter faction number: ")
 
         if choice == "1":
             return "fitness"
@@ -67,19 +68,19 @@ def choose_guild():
             print("Invalid choice, please try again.")
 
 
-def show_guild_habits(guild: str):
-    print(f"Available habits for {guild.capitalize()} Guild:")
+def show_faction_habits(faction: str):
+    print(f"Available habits for {faction.capitalize()} Faction:")
 
-    habits = guild_habits[guild]
+    habits = faction_habits[faction]
     for index, habit in enumerate(habits, start=1):
         print(f"{index}. {habit}")
 
 
-def choose_habit_from_guild(guild: str):
-    habits = guild_habits[guild]
+def choose_habit_from_faction(faction: str):
+    habits = faction_habits[faction]
 
     while True:
-        show_guild_habits(guild)
+        show_faction_habits(faction)
         choice = input("Choose a habit number (or type 'exit'): ")
 
         if choice.lower() == "exit":
@@ -94,25 +95,30 @@ def choose_habit_from_guild(guild: str):
             f"Please enter a number between 1 and {len(habits)}, or type 'exit'.")
 
 
-def add_habit(users: dict, user_key: str, habit_name: str, guild: str):
+def add_habit(users: dict, user_key: str, habit_name: str, faction: str):
     if user_key not in users:
         print(f"User not found")
         return
 
     habits = users[user_key]["habits"]
     today = str(date.today())
+    last = habit.get("last_completed")
+    yesterday = str(date.today() - timedelta(days=1))
     for habit in habits:
         if habit["name"].lower() == habit_name.lower():
-            if habit.get("last_completed") == today:
+            if last == today:
                 print(f"You already completed '{habit_name}' today!")
                 return
-            habit["streak"] += 1
-            habit["xp"] += 10
-            habit["last_completed"] = today
-
+            elif last == yesterday:
+                habit["streak"] += 1
+                habit["xp"] += 10
+                habit["last_completed"] = today
+            else:
+                habit["streak"] = 1
+                print(f"Streak reset! You missed a day. Starting fresh at 1.")
             users[user_key]["xp"] += 10
 
-            level = get_habit_level(habit["guild"], habit["xp"])
+            level = get_habit_level(habit["faction"], habit["xp"])
 
             print(f"Updated! {habit_name} streak is now {habit['streak']}")
             print(f"{habit_name} gained 10 XP and is now at level: {level}")
@@ -121,7 +127,7 @@ def add_habit(users: dict, user_key: str, habit_name: str, guild: str):
 
     new_habit = {
         "name": habit_name,
-        "guild": guild,
+        "faction": faction,
         "streak": 1,
         "xp": 10, "last_completed": str(date.today())
     }
@@ -129,25 +135,25 @@ def add_habit(users: dict, user_key: str, habit_name: str, guild: str):
     habits.append(new_habit)
     users[user_key]["xp"] += 10
 
-    level = get_habit_level(new_habit["guild"], new_habit["xp"])
+    level = get_habit_level(new_habit["faction"], new_habit["xp"])
 
     print(f"New habit added: {habit_name} (streak: 1)")
     print(f"{habit_name} gained 10 XP and starts at level: {level}")
     print(f"You gained 10 XP! Total XP: {users[user_key]['xp']}")
 
 
-def get_habit_level(guild: str, habit_xp: int):
+def get_habit_level(faction: str, habit_xp: int):
 
-    ranks = {
+    level_titles = {
         "fitness": [(120, "Master"), (70, "Warrior"), (30, "Explorer")],
         "health": [(120, "Master"), (70, "Cultivator"), (30, "Guardian")],
         "education": [(120, "Master"), (70, "Scholar"), (30, "Sage")]
     }
 
-    if guild not in ranks:
+    if faction not in level_titles:
         return "Unknown"
 
-    for xp_needed, title in ranks[guild]:
+    for xp_needed, title in level_titles[faction]:
         if habit_xp >= xp_needed:
             return title
 
@@ -155,7 +161,7 @@ def get_habit_level(guild: str, habit_xp: int):
 
 
 def show_all_habits(users: dict, user_key: str):
-    if user_key in users:
+    if user_key not in users:
         print(f"User not found")
         return
     profile = users[user_key]
@@ -163,9 +169,9 @@ def show_all_habits(users: dict, user_key: str):
     print(f"Habits for {profile['name']}:")
 
     for habit in habit_list:
-        level = get_habit_level(habit["guild"], habit["xp"])
+        level = get_habit_level(habit["faction"], habit["xp"])
         print(
-            f"* {habit['name']} | Guild: {habit['guild']} | "
+            f"* {habit['name']} | Faction: {habit['faction']} | "
             f"Streak: {habit['streak']} | Habit XP: {habit['xp']} | Rank: {level}"
         )
 
@@ -186,77 +192,87 @@ def load_data():
         return {}
 
 
-def main():
-    users = load_data()
-    display_name = input("May I know your name? ").strip()
-    user_key = display_name.lower()
-    if user_key in users:
-        print(f"Welcome back, {users[user_key]['name']}!")
-        print("Your return brings hope to Aethelgard in our battle against the Lord of Nightmares.")
-    else:
-        print("Welcome to Aethelgard, young wanderer. My name is Honora, and I am the guide for wanderers like yourself.")
+def greet_returning_user(users: dict, user_key: str):
+    print(f"Welcome back, {users[user_key]['name']}!")
+    print("Your return brings hope to Aethelgard in our battle against the Lord of Nightmares.")
 
-        print(
-            f"Hello, {display_name}. As you can see, our world, Aethelgard, lies in ruins.")
-        print("The Lord of Nightmares came with his army and invaded our land.")
-        print("They destroyed our beautiful home and brought darkness upon us.")
 
-        print(
-            f"Now, dear {display_name}, with your help, we can defeat the Lord of Nightmares and bring peace back to our world.")
-
-        approve = input("Will you help us in our mission? (y/n): ").lower()
-
-        if approve == "y":
-            print("We are truly grateful to hear that.")
-            print("All you must do is choose a habit you wish to bring into your life.")
-            print("With each passing day that you remain faithful to it, you strike a blow against the Lord of Nightmares.")
-            print("Do not worry—you are not alone on this journey.")
-            print("The guild you choose will stand beside you and support you.")
-        else:
-            print(
-                "That is disappointing to hear, but we respect your choice. May your path still be peaceful.")
-
-        while True:
-            try:
-                user_age = int(input("Enter your age: "))
-                break
-            except ValueError:
-                print("Please enter your age in numbers")
-
-        general_gender = ["Female", "Male", "Other"]
-        print("Choose your gender: ")
-        for index, gender in enumerate(general_gender, start=1):
-            print(f"{index}.{gender}")
-        while True:
-            choice = input("Enter the number: ")
-            if choice.isdigit():
-                choice = int(choice)
-                if 1 <= choice <= len(general_gender):
-                    user_gender = general_gender[choice-1]
-                    break
-                else:
-                    print("Invalid choice, please try again.")
-
-        add_user(users, user_key, display_name, user_age, user_gender)
-
-    print_profile(users, user_key)
-
+def ask_age() -> int:
     while True:
-        print("\nChoose a guild, or type 'exit' to finish.")
-        selected_guild = choose_guild()
-        if selected_guild is None:
-            break
-        chosen_habit = choose_habit_from_guild(selected_guild)
+        try:
+            return int(input("Enter your age: "))
+        except ValueError:
+            print("Please enter your age in numbers")
 
+
+def ask_gender() -> str:
+    general_gender = ["Female", "Male", "Other"]
+    print("Choose your gender: ")
+    for index, gender in enumerate(general_gender, start=1):
+        print(f"{index}.{gender}")
+    while True:
+        choice = input("Enter the number: ")
+        if choice.isdigit():
+            choice = int(choice)
+            if 1 <= choice <= len(general_gender):
+                return general_gender[choice - 1]
+            else:
+                print("Invalid choice, please try again.")
+
+
+def register_new_user(users: dict, user_key: str, display_name: str):
+    print("Welcome to Aethelgard, young wanderer. My name is Honora, and I am the guide for wanderers like yourself.")
+    print(
+        f"Hello, {display_name}. As you can see, our world, Aethelgard, lies in ruins.")
+    print("The Lord of Nightmares came with his army and invaded our land.")
+    print("They destroyed our beautiful home and brought darkness upon us.")
+    print(
+        f"Now, dear {display_name}, with your help, we can defeat the Lord of Nightmares and bring peace back to our world.")
+
+    approve = input("Will you help us in our mission? (y/n): ").lower()
+
+    if approve == "y":
+        print("We are truly grateful to hear that.")
+        print("All you must do is choose a habit you wish to bring into your life.")
+        print("With each passing day that you remain faithful to it, you strike a blow against the Lord of Nightmares.")
+        print("Do not worry—you are not alone on this journey.")
+        print("The faction you choose will stand beside you and support you.")
+    else:
+        print("That is disappointing to hear, but we respect your choice. May your path still be peaceful.")
+        sys.exit()
+
+    user_age = ask_age()
+    user_gender = ask_gender()
+    add_user(users, user_key, display_name, user_age, user_gender)
+
+
+def habit_selection_loop(users: dict, user_key: str):
+    while True:
+        print("\nChoose a faction, or type 'exit' to finish.")
+        selected_faction = choose_faction()
+        if selected_faction is None:
+            break
+        chosen_habit = choose_habit_from_faction(selected_faction)
         if chosen_habit is None:
             continue
-
-        add_habit(users, user_key, chosen_habit, selected_guild)
-
+        add_habit(users, user_key, chosen_habit, selected_faction)
         stop = input("Do you want to add another habit? (yes/no): ").lower()
         if stop == "no":
             break
 
+
+def main():
+    users = load_data()
+    display_name = input("May I know your name? ").strip()
+    user_key = display_name.lower()
+
+    if user_key in users:
+        greet_returning_user(users, user_key)
+    else:
+        register_new_user(users, user_key, display_name)
+
+    print_profile(users, user_key)
+    habit_selection_loop(users, user_key)
     show_all_habits(users, user_key)
     print(f"Final XP: {users[user_key]['xp']}")
     save_data(users)
